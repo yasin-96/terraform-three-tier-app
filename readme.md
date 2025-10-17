@@ -1,2 +1,3 @@
 ![Design of System](three_tier_app.jpeg)
-*Design of the whole app infrastructure*
+
+<p align="center"><em>Design of the app infrastructure</em></p>
