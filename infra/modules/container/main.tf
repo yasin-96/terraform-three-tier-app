@@ -6,6 +6,14 @@ resource "aws_ecr_repository" "ecr" {
   }
 }
 
+resource "aws_iam_openid_connect_provider" "default" {
+  url = "https://token.actions.githubusercontent.com"
+
+  client_id_list = [
+    "sts.amazonaws.com",
+  ]
+}
+
 resource "aws_security_group" "lb" {
   name        = "backend-lb-sg"
   description = "ALB security group"
@@ -44,8 +52,15 @@ resource "aws_lb_target_group" "backend_tg" {
   }
 }
 
+resource "aws_lb" "backend-lb" {
+  name = "backend-lb"
+  internal = false
+  load_balancer_type = "application"
+  subnets = var.public_subnet_ids
+}
+
 resource "aws_lb_listener" "http" {
-  load_balancer_arn = aws_lb.backend_lb.arn
+  load_balancer_arn = aws_lb.backend-lb.arn
   port              = 80
   protocol          = "HTTP"
 
@@ -72,13 +87,6 @@ resource "aws_security_group" "tasks" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-}
-
-resource "aws_lb" "backend-lb" {
-  name = "backend-lb"
-  internal = false
-  load_balancer_type = "application"
-  subnets = var.public_subnet_ids
 }
 
 # Execution role: lets the agent pull from ECR + write logs
@@ -108,61 +116,28 @@ resource "aws_ecs_cluster" "backend-cluster" {
   name = "backend-cluster"
 }
 
-resource "aws_ecs_task_definition" "backend" {
-  family                   = "backend"
-  requires_compatibilities = ["FARGATE"]
-  network_mode             = "awsvpc"
-  cpu                      = "256"
-  memory                   = "512"
-  execution_role_arn       = aws_iam_role.ecs_execution.arn
-  task_role_arn            = aws_iam_role.ecs_task.arn
-  runtime_platform {
-    operating_system_family = "LINUX"
-    cpu_architecture        = "X86_64" # or ARM64 if your image supports it
-  }
+# resource "aws_ecs_service" "backend" {
+#   name            = "backend"
+#   cluster         = aws_ecs_cluster.backend-cluster.id
+#   task_definition = aws_ecs_task_definition.backend.arn
+#   desired_count   = 2
+#   launch_type     = "FARGATE"
+#   platform_version = "LATEST"
 
-  container_definitions = jsonencode([
-    {
-      name      = "backend"
-      image     = var.image       
-      essential = true
-      portMappings = [
-        { containerPort = 8080, protocol = "tcp" }
-      ]
-      logConfiguration = {
-        logDriver = "awslogs",
-        options = {
-          awslogs-group         = aws_cloudwatch_log_group.app.name,
-          awslogs-region        = var.region,
-          awslogs-stream-prefix = "ecs"
-        }
-      }
-    }
-  ])
-}
+#   # Required for Fargate: awsvpc networking
+#   network_configuration {
+#     subnets         = var.private_subnet_ids   # prefer private subnets
+#     security_groups = [aws_security_group.tasks.id]
+#     assign_public_ip = false                   # true only if using public subnets
+#   }
 
-resource "aws_ecs_service" "backend" {
-  name            = "backend"
-  cluster         = aws_ecs_cluster.backend_cluster.id
-  task_definition = aws_ecs_task_definition.backend.arn
-  desired_count   = 2
-  launch_type     = "FARGATE"
-  platform_version = "LATEST"
+#   load_balancer {
+#     target_group_arn = aws_lb_target_group.backend_tg.arn
+#     container_name   = "backend"
+#     container_port   = 8080
+#   }
 
-  # Required for Fargate: awsvpc networking
-  network_configuration {
-    subnets         = var.private_subnet_ids   # prefer private subnets
-    security_groups = [aws_security_group.tasks.id]
-    assign_public_ip = false                   # true only if using public subnets
-  }
-
-  load_balancer {
-    target_group_arn = aws_lb_target_group.backend_tg.arn
-    container_name   = "backend"
-    container_port   = 8080
-  }
-
-  depends_on = [
-    aws_lb_listener.http
-  ]
-}
+#   depends_on = [
+#     aws_lb_listener.http
+#   ]
+# }
