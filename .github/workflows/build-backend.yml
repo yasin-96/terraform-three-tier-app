@@ -5,7 +5,7 @@ on:
     branches: [ "main" ]
 
 permissions:
-  id-token: write
+  id-token: write #necessary for oidc
   contents: read
 
 env:
@@ -22,23 +22,24 @@ jobs:
     - uses: actions/setup-java@v4
       with:
         distribution: temurin
-        java-version: '17'
+        java-version: '21'
 
-    - run: mvn clean package -DskipTests
+    - run: mvn -f backend/pom.xml clean package -DskipTests
 
     - name: Configure AWS credentials (OIDC)
       uses: aws-actions/configure-aws-credentials@v4
-      with:
-        role-to-assume: arn:aws:iam::<ACCOUNT_ID>:role/github-actions-ecr
+      with: 
+        role-to-assume: arn:aws:iam::373486034214:role/github-actions-ecr
         aws-region: ${{ env.AWS_REGION }}
 
     - uses: aws-actions/amazon-ecr-login@v2
       id: login-ecr
-
+ 
     - name: Build and push image
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
+        cd backend
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG

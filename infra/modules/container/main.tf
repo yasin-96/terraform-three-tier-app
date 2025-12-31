@@ -6,13 +6,59 @@ resource "aws_ecr_repository" "ecr" {
   }
 }
 
-resource "aws_iam_openid_connect_provider" "default" {
+resource "aws_iam_openid_connect_provider" "github" {
   url = "https://token.actions.githubusercontent.com"
 
   client_id_list = [
     "sts.amazonaws.com",
   ]
 }
+
+resource "aws_iam_role" "github_actions_ecr" {
+  name = "github-actions-ecr"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Principal = {
+        Federated = aws_iam_openid_connect_provider.github.arn
+      },
+      Action = "sts:AssumeRoleWithWebIdentity",
+      Condition = {
+        StringLike = {
+          "token.actions.githubusercontent.com:sub" = "repo:yasin-96/terraform-three-tier-app:ref:refs/heads/main"
+        }
+      }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "github_actions_ecr_policy" {
+  name = "github-actions-ecr-policy"
+  role = aws_iam_role.github_actions_ecr.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:PutImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+
+
 
 resource "aws_security_group" "lb" {
   name        = "backend-lb-sg"
@@ -116,28 +162,29 @@ resource "aws_ecs_cluster" "backend-cluster" {
   name = "backend-cluster"
 }
 
-# resource "aws_ecs_service" "backend" {
-#   name            = "backend"
-#   cluster         = aws_ecs_cluster.backend-cluster.id
-#   task_definition = aws_ecs_task_definition.backend.arn
-#   desired_count   = 2
-#   launch_type     = "FARGATE"
-#   platform_version = "LATEST"
+/*
+resource "aws_ecs_service" "backend" {
+  name            = "backend"
+  cluster         = aws_ecs_cluster.backend-cluster.id
+  task_definition = aws_ecs_task_definition.backend.arn
+  desired_count   = 2
+  launch_type     = "FARGATE"
+  platform_version = "LATEST"
 
-#   # Required for Fargate: awsvpc networking
-#   network_configuration {
-#     subnets         = var.private_subnet_ids   # prefer private subnets
-#     security_groups = [aws_security_group.tasks.id]
-#     assign_public_ip = false                   # true only if using public subnets
-#   }
+  # Required for Fargate: awsvpc networking
+  network_configuration {
+    subnets         = var.private_subnet_ids   # prefer private subnets
+    security_groups = [aws_security_group.tasks.id]
+    assign_public_ip = false                   # true only if using public subnets
+  }
 
-#   load_balancer {
-#     target_group_arn = aws_lb_target_group.backend_tg.arn
-#     container_name   = "backend"
-#     container_port   = 8080
-#   }
+  load_balancer {
+    target_group_arn = aws_lb_target_group.backend_tg.arn
+    container_name   = "backend"
+    container_port   = 8080
+  }
 
-#   depends_on = [
-#     aws_lb_listener.http
-#   ]
-# }
+  depends_on = [
+    aws_lb_listener.http
+  ]
+}*/
