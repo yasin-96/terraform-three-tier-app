@@ -154,6 +154,13 @@ data "aws_iam_policy_document" "terraform_inline_policy_doc" {
   }
 
   statement {
+    sid = "S3ALBLogsBucket"
+    effect = "Allow"
+    actions = ["s3:*"]
+    resources = [aws_s3_bucket.alb_logs.arn]
+  }
+
+  statement {
     sid       = "S3ObjectsFull"
     effect    = "Allow"
     actions   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
