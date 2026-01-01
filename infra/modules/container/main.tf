@@ -319,7 +319,8 @@ resource "aws_iam_role_policy_attachment" "ecs_exec_attach" {
 resource "aws_ecs_cluster" "backend-cluster" {
   name = "backend-cluster"
 }
-/*
+
+
 resource "aws_ecs_task_definition" "backend" {
   family                   = "backend-task"
   network_mode             = "awsvpc"
@@ -384,4 +385,4 @@ resource "aws_ecs_service" "backend" {
   depends_on = [
     aws_lb_listener.http
   ]
-}*/
+}
