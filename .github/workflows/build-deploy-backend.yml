@@ -59,7 +59,7 @@ jobs:
         working-directory: infra
     steps:
       - name: Check var value
-        run: echo "IMAGE_URI is ${{ needs.build-and-push.outputs.image_uri }}""      
+        run: echo "IMAGE_URI is ${{ needs.build-and-push.outputs.image_uri }}"    
 
       - name: Checkout repo
         uses: actions/checkout@v4
