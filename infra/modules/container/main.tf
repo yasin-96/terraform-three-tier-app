@@ -142,13 +142,7 @@ data "aws_iam_policy_document" "terraform_inline_policy_doc" {
     sid       = "S3BucketFull"
     effect    = "Allow"
     actions   = [
-      "s3:ListBucket",
-      "s3:GetBucketAcl",
-      "s3:GetBucketPolicy",
-      "s3:GetBucketVersioning",
-      "s3:GetBucketCORS",
-      "s3:GetBucketWebsite",
-      "s3:GetBucketAccelerateConfiguration"
+      "s3:*"
     ]
     resources = [aws_s3_bucket.tf_state.arn]
   }
