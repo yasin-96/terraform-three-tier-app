@@ -2,6 +2,7 @@ provider "aws" {
   region = var.region
 }
 
+
 terraform {
   backend "s3" {
     bucket         = "my-terraform-state-bucket-three-tier"
@@ -11,7 +12,6 @@ terraform {
     encrypt        = true
   }
 }
-
 
 module "networking" {
   source          = "./modules/networking"

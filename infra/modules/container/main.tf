@@ -79,6 +79,38 @@ resource "aws_iam_role" "github_actions_terraform" {
 
 data "aws_iam_policy_document" "terraform_inline_policy_doc" {
   statement {
+    sid    = "IAMFull"
+    effect = "Allow"
+    actions = [
+      "iam:GetRole",
+      "iam:ListRolePolicies",
+      "iam:GetRolePolicy",
+      "iam:ListAttachedRolePolicies",
+      "iam:CreateRole",
+      "iam:DeleteRole",
+      "iam:AttachRolePolicy",
+      "iam:DetachRolePolicy",
+      "iam:PassRole",
+      "iam:GetOpenIDConnectProvider"
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid       = "ECRFull"
+    effect    = "Allow"
+    actions = [
+      "ecr:DescribeRepositories",
+      "ecr:CreateRepository",
+      "ecr:DeleteRepository",
+      "ecr:ListImages",
+      "ecr:DescribeImages",
+      "ecr:ListTagsForResource"
+    ]
+    resources = ["*"]
+  }
+
+  statement {
     sid       = "ECSPermissions"
     effect    = "Allow"
     actions   = ["ecs:*"]
@@ -100,51 +132,48 @@ data "aws_iam_policy_document" "terraform_inline_policy_doc" {
   }
 
   statement {
-    sid    = "IAMLimited"
-    effect = "Allow"
-    actions = [
-      "iam:CreateRole",
-      "iam:DeleteRole",
-      "iam:AttachRolePolicy",
-      "iam:DetachRolePolicy",
-      "iam:PassRole",
-      "iam:GetRole"
-    ]
-    resources = ["*"]
-  }
-
-  statement {
-    sid    = "ECRReadOnly"
-    effect = "Allow"
-    actions = [
-      "ecr:DescribeRepositories",
-      "ecr:ListImages",
-      "ecr:DescribeImages"
-    ]
-    resources = ["*"]
-  }
-
-  statement {
     sid       = "CloudWatchLogs"
     effect    = "Allow"
     actions   = ["logs:*"]
     resources = ["*"]
   }
+
   statement {
-    sid       = "S3Objects"
+    sid       = "S3BucketFull"
+    effect    = "Allow"
+    actions   = [
+      "s3:ListBucket",
+      "s3:GetBucketAcl",
+      "s3:GetBucketPolicy",
+      "s3:GetBucketVersioning",
+      "s3:GetBucketCORS"
+    ]
+    resources = [aws_s3_bucket.tf_state.arn]
+  }
+
+  statement {
+    sid       = "S3ObjectsFull"
     effect    = "Allow"
     actions   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
-    resources = ["arn:aws:s3:::my-terraform-state-bucket-three-tier/*"]
+    resources = ["${aws_s3_bucket.tf_state.arn}/*"]
   }
 
   statement {
-    sid    = "S3Bucket"
+    sid    = "DynamoDBFull"
     effect = "Allow"
-
-    actions   = ["s3:ListBucket"]
-    resources = ["arn:aws:s3:::my-terraform-state-bucket-three-tier"]
+    actions = [
+      "dynamodb:GetItem",
+      "dynamodb:PutItem",
+      "dynamodb:UpdateItem",
+      "dynamodb:DeleteItem",
+      "dynamodb:DescribeTable",
+      "dynamodb:DescribeContinuousBackups",
+      "dynamodb:DescribeTimeToLive"
+    ]
+    resources = [aws_dynamodb_table.tf_lock.arn]
   }
 }
+
 
 resource "aws_iam_role_policy" "terraform_inline_policy" {
   name   = "github-actions-terraform-inline"
