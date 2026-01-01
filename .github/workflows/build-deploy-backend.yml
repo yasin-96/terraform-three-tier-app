@@ -58,11 +58,11 @@ jobs:
       run:
         working-directory: infra
     steps:
-      - name: Check var value
-        run: echo "IMAGE_URI is ${{ needs.build-and-push.outputs.image_uri }}"    
-
       - name: Checkout repo
         uses: actions/checkout@v4
+
+      - name: Check var value
+        run: echo "IMAGE_URI is ${{ needs.build-and-push.outputs.image_uri }}"    
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
