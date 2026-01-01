@@ -33,7 +33,6 @@ variable "az_count" {
 
 variable "image" {
   type = string
-  default = ""
 }
 
 variable "bucket_name" {

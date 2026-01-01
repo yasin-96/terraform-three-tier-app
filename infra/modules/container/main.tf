@@ -57,6 +57,101 @@ resource "aws_iam_role_policy" "github_actions_ecr_policy" {
   })
 }
 
+resource "aws_iam_role" "github_actions_terraform" {
+  name = "github-actions-terraform"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Federated = aws_iam_openid_connect_provider.github.arn
+      }
+      Action = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringLike = {
+          "token.actions.githubusercontent.com:sub" = "repo:yasin-96/terraform-three-tier-app:ref:refs/heads/main"
+        }
+      }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "terraform_attach" {
+  role       = aws_iam_role.github_actions_terraform.name
+  policy_arn = aws_iam_policy.terraform_policy.arn
+}
+
+resource "aws_iam_policy" "terraform_policy" {
+  name = "github-actions-terraform-policy"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+
+      # ECS
+      {
+        Effect = "Allow"
+        Action = [
+          "ecs:*"
+        ]
+        Resource = "*"
+      },
+
+      # EC2 / Networking
+      {
+        Effect = "Allow"
+        Action = [
+          "ec2:*"
+        ]
+        Resource = "*"
+      },
+
+      # ALB
+      {
+        Effect = "Allow"
+        Action = [
+          "elasticloadbalancing:*"
+        ]
+        Resource = "*"
+      },
+
+      # IAM (limited)
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:CreateRole",
+          "iam:DeleteRole",
+          "iam:AttachRolePolicy",
+          "iam:DetachRolePolicy",
+          "iam:PassRole",
+          "iam:GetRole"
+        ]
+        Resource = "*"
+      },
+
+      # ECR (read only for ECS)
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:DescribeRepositories",
+          "ecr:ListImages",
+          "ecr:DescribeImages"
+        ]
+        Resource = "*"
+      },
+
+      # CloudWatch Logs
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:*"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
 
 
 
@@ -162,7 +257,48 @@ resource "aws_ecs_cluster" "backend-cluster" {
   name = "backend-cluster"
 }
 
-/*
+resource "aws_ecs_task_definition" "backend" {
+  family                   = "backend-task"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "512"
+  memory                   = "1024"
+
+  # Roles
+  execution_role_arn = aws_iam_role.ecs_execution.arn  # Lets ECS agent pull from ECR & write logs
+  task_role_arn      = aws_iam_role.ecs_task.arn       # Lets container access AWS resources if needed
+
+  container_definitions = jsonencode([{
+    name  = "backend"
+    image = var.image
+
+    portMappings = [{
+      containerPort = 8080
+      hostPort      = 8080
+      protocol      = "tcp"
+    }]
+
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        "awslogs-group"         = "/ecs/backend"
+        "awslogs-region"        = var.aws_region
+        "awslogs-stream-prefix" = "ecs"
+      }
+    }
+
+    environment = [
+      {
+        name  = "ENVIRONMENT"
+        value = "production"
+      }
+    ]
+
+  }])
+}
+
+
+
 resource "aws_ecs_service" "backend" {
   name            = "backend"
   cluster         = aws_ecs_cluster.backend-cluster.id
@@ -187,4 +323,4 @@ resource "aws_ecs_service" "backend" {
   depends_on = [
     aws_lb_listener.http
   ]
-}*/
+}
