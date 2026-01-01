@@ -1,6 +1,6 @@
 resource "aws_ecr_repository" "ecr" {
-  name                 = "three-tier-cr"
-  
+  name = "three-tier-cr"
+
   image_scanning_configuration {
     scan_on_push = true
   }
@@ -77,80 +77,79 @@ resource "aws_iam_role" "github_actions_terraform" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "terraform_attach" {
-  role       = aws_iam_role.github_actions_terraform.name
-  policy_arn = aws_iam_policy.terraform_policy.arn
+data "aws_iam_policy_document" "terraform_inline_policy_doc" {
+  statement {
+    sid       = "ECSPermissions"
+    effect    = "Allow"
+    actions   = ["ecs:*"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid       = "EC2AndNetworking"
+    effect    = "Allow"
+    actions   = ["ec2:*"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid       = "ALBPermissions"
+    effect    = "Allow"
+    actions   = ["elasticloadbalancing:*"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "IAMLimited"
+    effect = "Allow"
+    actions = [
+      "iam:CreateRole",
+      "iam:DeleteRole",
+      "iam:AttachRolePolicy",
+      "iam:DetachRolePolicy",
+      "iam:PassRole",
+      "iam:GetRole"
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "ECRReadOnly"
+    effect = "Allow"
+    actions = [
+      "ecr:DescribeRepositories",
+      "ecr:ListImages",
+      "ecr:DescribeImages"
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid       = "CloudWatchLogs"
+    effect    = "Allow"
+    actions   = ["logs:*"]
+    resources = ["*"]
+  }
+  statement {
+    sid       = "S3Objects"
+    effect    = "Allow"
+    actions   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
+    resources = ["arn:aws:s3:::my-terraform-state-bucket-three-tier/*"]
+  }
+
+  statement {
+    sid    = "S3Bucket"
+    effect = "Allow"
+
+    actions   = ["s3:ListBucket"]
+    resources = ["arn:aws:s3:::my-terraform-state-bucket-three-tier"]
+  }
 }
 
-resource "aws_iam_policy" "terraform_policy" {
-  name = "github-actions-terraform-policy"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-
-      # ECS
-      {
-        Effect = "Allow"
-        Action = [
-          "ecs:*"
-        ]
-        Resource = "*"
-      },
-
-      # EC2 / Networking
-      {
-        Effect = "Allow"
-        Action = [
-          "ec2:*"
-        ]
-        Resource = "*"
-      },
-
-      # ALB
-      {
-        Effect = "Allow"
-        Action = [
-          "elasticloadbalancing:*"
-        ]
-        Resource = "*"
-      },
-
-      # IAM (limited)
-      {
-        Effect = "Allow"
-        Action = [
-          "iam:CreateRole",
-          "iam:DeleteRole",
-          "iam:AttachRolePolicy",
-          "iam:DetachRolePolicy",
-          "iam:PassRole",
-          "iam:GetRole"
-        ]
-        Resource = "*"
-      },
-
-      # ECR (read only for ECS)
-      {
-        Effect = "Allow"
-        Action = [
-          "ecr:DescribeRepositories",
-          "ecr:ListImages",
-          "ecr:DescribeImages"
-        ]
-        Resource = "*"
-      },
-
-      # CloudWatch Logs
-      {
-        Effect = "Allow"
-        Action = [
-          "logs:*"
-        ]
-        Resource = "*"
-      }
-    ]
-  })
+resource "aws_iam_role_policy" "terraform_inline_policy" {
+  name   = "github-actions-terraform-inline"
+  role   = aws_iam_role.github_actions_terraform.name
+  policy = data.aws_iam_policy_document.terraform_inline_policy_doc.json
 }
 
 resource "aws_s3_bucket" "tf_state" {
@@ -198,10 +197,10 @@ resource "aws_security_group" "lb" {
   vpc_id      = var.vpc_id
 
   ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port        = 80
+    to_port          = 80
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
   }
 
@@ -218,7 +217,7 @@ resource "aws_lb_target_group" "backend_tg" {
   port        = 8080
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
-  target_type = "ip"               # REQUIRED for Fargate
+  target_type = "ip" # REQUIRED for Fargate
 
   health_check {
     path                = "/"
@@ -231,10 +230,10 @@ resource "aws_lb_target_group" "backend_tg" {
 }
 
 resource "aws_lb" "backend-lb" {
-  name = "backend-lb"
-  internal = false
+  name               = "backend-lb"
+  internal           = false
   load_balancer_type = "application"
-  subnets = var.public_subnet_ids
+  subnets            = var.public_subnet_ids
 }
 
 resource "aws_lb_listener" "http" {
@@ -273,15 +272,15 @@ resource "aws_iam_role" "ecs_execution" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Effect = "Allow",
+      Effect    = "Allow",
       Principal = { Service = "ecs-tasks.amazonaws.com" },
-      Action = "sts:AssumeRole"
+      Action    = "sts:AssumeRole"
     }]
   })
 }
 
 resource "aws_iam_role" "ecs_task" {
-  name = "ecsTaskRole-backend"
+  name               = "ecsTaskRole-backend"
   assume_role_policy = aws_iam_role.ecs_execution.assume_role_policy
 }
 

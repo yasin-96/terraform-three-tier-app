@@ -14,20 +14,20 @@ terraform {
 
 
 module "networking" {
-  source = "./modules/networking"
-  az_count = var.az_count
-  public_subnets = var.public_subnets
+  source          = "./modules/networking"
+  az_count        = var.az_count
+  public_subnets  = var.public_subnets
   private_subnets = var.private_subnets
-  vpc_cidr = var.vpc_cidr
+  vpc_cidr        = var.vpc_cidr
 }
 
 module "container" {
-  aws_region = var.region
-  source = "./modules/container"
-  public_subnet_ids = module.networking.private_subnet_ids
-  vpc_id = module.networking.vpc_id
-  region = var.region
-  image = var.image
+  aws_region         = var.region
+  source             = "./modules/container"
+  public_subnet_ids  = module.networking.private_subnet_ids
+  vpc_id             = module.networking.vpc_id
+  region             = var.region
+  image              = var.image
   private_subnet_ids = module.networking.private_subnet_ids
 }
 /*

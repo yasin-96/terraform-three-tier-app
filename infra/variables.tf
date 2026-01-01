@@ -32,11 +32,11 @@ variable "az_count" {
 }
 
 variable "image" {
-  type = string
+  type    = string
   default = ""
 }
 
 variable "bucket_name" {
-  type = string
+  type    = string
   default = "frontend"
 }
