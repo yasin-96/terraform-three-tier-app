@@ -268,8 +268,8 @@ resource "aws_security_group" "tasks" {
   vpc_id = var.vpc_id
 
   ingress {
-    from_port       = 8080
-    to_port         = 8080
+    from_port       = 80
+    to_port         = 80
     protocol        = "tcp"
     security_groups = [aws_security_group.lb.id] # only ALB can reach tasks
   }
