@@ -91,7 +91,8 @@ data "aws_iam_policy_document" "terraform_inline_policy_doc" {
       "iam:AttachRolePolicy",
       "iam:DetachRolePolicy",
       "iam:PassRole",
-      "iam:GetOpenIDConnectProvider"
+      "iam:GetOpenIDConnectProvider",
+      "iam:PutRole"
     ]
     resources = ["*"]
   }
