@@ -41,16 +41,18 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
         id: login-ecr
 
-      - name: Build and push Docker image
+      - name: Set image URI
         id: set-image
         run: |
             IMAGE_TAG=${GITHUB_SHA}
             IMAGE_URI=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}
             echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
-            echo "$IMAGE_URI"
+      
+      - name: Build and push Docker image
+        run: |
             cd backend
-            docker build -t $IMAGE_URI .
-            docker push $IMAGE_URI
+            docker build -t "${{ steps.set-image.outputs.image_uri }}" .
+            docker push "${{ steps.set-image.outputs.image_uri }}"
 
   terraform-deploy:
     needs: build-and-push
