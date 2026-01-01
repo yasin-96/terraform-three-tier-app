@@ -86,4 +86,6 @@ jobs:
           terraform plan -var="image=$IMAGE_URI"
       
       - name: Terraform Apply
-        run: terraform apply -auto-approve -var="image=${{ needs.build-and-push.outputs.image_uri }}"
+        run: |
+          IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${GITHUB_SHA}"
+          terraform apply -auto-approve -var="image=$IMAGE_URI"
