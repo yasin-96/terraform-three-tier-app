@@ -157,7 +157,7 @@ data "aws_iam_policy_document" "terraform_inline_policy_doc" {
     sid = "S3ALBLogsBucket"
     effect = "Allow"
     actions = ["s3:*"]
-    resources = [aws_s3_bucket.alb_logs.arn]
+    resources = ["*"]
   }
 
   statement {
