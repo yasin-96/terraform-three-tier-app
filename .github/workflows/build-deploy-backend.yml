@@ -49,7 +49,7 @@ jobs:
           cd backend
           docker build -t $IMAGE_URI .
           docker push $IMAGE_URI
-          echo "::set-output name=image_uri::$IMAGE_URI"
+          echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
 
   terraform-deploy:
     needs: build-and-push
