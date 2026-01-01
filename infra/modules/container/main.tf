@@ -14,11 +14,6 @@ resource "aws_iam_openid_connect_provider" "github" {
   ]
 }
 
-resource "aws_s3_bucket" "alb_logs" {
-  bucket = "my-alb-logs-bucket"
-  force_destroy = true
-}
-
 resource "aws_iam_role" "github_actions_ecr" {
   name = "github-actions-ecr"
 
@@ -157,7 +152,7 @@ data "aws_iam_policy_document" "terraform_inline_policy_doc" {
     sid = "S3ALBLogsBucket"
     effect = "Allow"
     actions = ["s3:*"]
-    resources = ["*"]
+    resources = ["arn:aws:s3:::my-alb-logs-bucket-three-tier"]
   }
 
   statement {
@@ -264,7 +259,7 @@ resource "aws_lb" "backend-lb" {
   security_groups = [aws_security_group.lb.id]
 
   access_logs {
-    bucket  = aws_s3_bucket.alb_logs.bucket
+    bucket  = "my-alb-logs-bucket-three-tier "
     prefix  = "alb-logs"
     enabled = true
   }
