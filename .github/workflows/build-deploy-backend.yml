@@ -5,7 +5,7 @@ on:
     branches: ["main"]
 
 permissions:
-  id-token: write  # necessary for OIDC
+  id-token: write
   contents: read
 
 env:
@@ -60,9 +60,6 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Check var value
-        run: echo "IMAGE_URI is ${{ needs.build-and-push.outputs.image_uri }}"    
-
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -88,6 +85,5 @@ jobs:
           IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${GITHUB_SHA}"
           terraform plan -var="image=$IMAGE_URI"
       
-
       - name: Terraform Apply
         run: terraform apply -auto-approve -var="image=${{ needs.build-and-push.outputs.image_uri }}"
