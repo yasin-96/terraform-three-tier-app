@@ -321,6 +321,10 @@ resource "aws_ecs_cluster" "backend-cluster" {
   name = "backend-cluster"
 }
 
+resource "aws_cloudwatch_log_group" "backend" {
+  name              = "/ecs/backend"
+  retention_in_days = 7
+}
 
 resource "aws_ecs_task_definition" "backend" {
   family                   = "backend-task"
