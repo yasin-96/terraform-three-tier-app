@@ -51,6 +51,9 @@ jobs:
           docker push $IMAGE_URI
           echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
 
+      - name: Debug image output
+        run: echo "IMAGE_URI is ${{ steps.set-image.outputs.image_uri }}"    
+
   terraform-deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
