@@ -238,7 +238,7 @@ resource "aws_security_group" "lb" {
 
 resource "aws_lb_target_group" "backend_tg" {
   name        = "backend-tg"
-  port        = 8080
+  port        = 80
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
   target_type = "ip" # REQUIRED for Fargate
