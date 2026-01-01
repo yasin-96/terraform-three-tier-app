@@ -98,8 +98,8 @@ data "aws_iam_policy_document" "terraform_inline_policy_doc" {
   }
 
   statement {
-    sid       = "ECRFull"
-    effect    = "Allow"
+    sid    = "ECRFull"
+    effect = "Allow"
     actions = [
       "ecr:DescribeRepositories",
       "ecr:CreateRepository",
@@ -140,9 +140,9 @@ data "aws_iam_policy_document" "terraform_inline_policy_doc" {
   }
 
   statement {
-    sid       = "S3BucketFull"
-    effect    = "Allow"
-    actions   = [
+    sid    = "S3BucketFull"
+    effect = "Allow"
+    actions = [
       "s3:*"
     ]
     resources = [aws_s3_bucket.tf_state.arn]
@@ -329,8 +329,8 @@ resource "aws_ecs_task_definition" "backend" {
   memory                   = "1024"
 
   # Roles
-  execution_role_arn = aws_iam_role.ecs_execution.arn  # Lets ECS agent pull from ECR & write logs
-  task_role_arn      = aws_iam_role.ecs_task.arn       # Lets container access AWS resources if needed
+  execution_role_arn = aws_iam_role.ecs_execution.arn # Lets ECS agent pull from ECR & write logs
+  task_role_arn      = aws_iam_role.ecs_task.arn      # Lets container access AWS resources if needed
 
   container_definitions = jsonencode([{
     name  = "backend"
@@ -362,18 +362,18 @@ resource "aws_ecs_task_definition" "backend" {
 }
 
 resource "aws_ecs_service" "backend" {
-  name            = "backend"
-  cluster         = aws_ecs_cluster.backend-cluster.id
-  task_definition = aws_ecs_task_definition.backend.arn
-  desired_count   = 2
-  launch_type     = "FARGATE"
+  name             = "backend"
+  cluster          = aws_ecs_cluster.backend-cluster.id
+  task_definition  = aws_ecs_task_definition.backend.arn
+  desired_count    = 2
+  launch_type      = "FARGATE"
   platform_version = "LATEST"
 
   # Required for Fargate: awsvpc networking
   network_configuration {
-    subnets         = var.private_subnet_ids   # prefer private subnets
-    security_groups = [aws_security_group.tasks.id]
-    assign_public_ip = false                   # true only if using public subnets
+    subnets          = var.private_subnet_ids # prefer private subnets
+    security_groups  = [aws_security_group.tasks.id]
+    assign_public_ip = false # true only if using public subnets
   }
 
   load_balancer {
