@@ -14,6 +14,11 @@ resource "aws_iam_openid_connect_provider" "github" {
   ]
 }
 
+resource "aws_s3_bucket" "alb_logs" {
+  bucket = "my-alb-logs-bucket"
+  force_destroy = true
+}
+
 resource "aws_iam_role" "github_actions_ecr" {
   name = "github-actions-ecr"
 
@@ -250,6 +255,12 @@ resource "aws_lb" "backend-lb" {
   load_balancer_type = "application"
   subnets            = var.public_subnet_ids
   security_groups = [aws_security_group.lb.id]
+
+  access_logs {
+    bucket  = aws_s3_bucket.alb_logs.bucket
+    prefix  = "alb-logs"
+    enabled = true
+  }
 }
 
 resource "aws_lb_listener" "http" {
