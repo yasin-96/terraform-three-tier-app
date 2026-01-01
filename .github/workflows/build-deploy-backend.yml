@@ -47,6 +47,7 @@ jobs:
             IMAGE_TAG=${GITHUB_SHA}
             IMAGE_URI=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}
             echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
+            echo "$IMAGE_URI"
             cd backend
             docker build -t $IMAGE_URI .
             docker push $IMAGE_URI
