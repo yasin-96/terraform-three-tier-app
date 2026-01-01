@@ -2,6 +2,17 @@ provider "aws" {
   region = var.region
 }
 
+terraform {
+  backend "s3" {
+    bucket         = "my-terraform-state-bucket-three-tier"
+    key            = "three-tier-app/terraform.tfstate"
+    region         = "eu-west-1"
+    dynamodb_table = "terraform-lock-table"
+    encrypt        = true
+  }
+}
+
+
 module "networking" {
   source = "./modules/networking"
   az_count = var.az_count

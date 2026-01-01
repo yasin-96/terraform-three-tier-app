@@ -153,6 +153,43 @@ resource "aws_iam_policy" "terraform_policy" {
   })
 }
 
+resource "aws_s3_bucket" "tf_state" {
+  bucket = "my-terraform-state-bucket-three-tier"
+
+  force_destroy = false
+}
+
+resource "aws_s3_bucket_versioning" "tf_state_versioning" {
+  bucket = aws_s3_bucket.tf_state.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# Server-side encryption is now a separate resource
+resource "aws_s3_bucket_server_side_encryption_configuration" "tf_state_sse" {
+  bucket = aws_s3_bucket.tf_state.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+
+resource "aws_dynamodb_table" "tf_lock" {
+  name         = "terraform-lock-table"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "LockID"
+
+  attribute {
+    name = "LockID"
+    type = "S"
+  }
+}
+
+
 
 
 resource "aws_security_group" "lb" {
@@ -256,7 +293,7 @@ resource "aws_iam_role_policy_attachment" "ecs_exec_attach" {
 resource "aws_ecs_cluster" "backend-cluster" {
   name = "backend-cluster"
 }
-
+/*
 resource "aws_ecs_task_definition" "backend" {
   family                   = "backend-task"
   network_mode             = "awsvpc"
@@ -297,8 +334,6 @@ resource "aws_ecs_task_definition" "backend" {
   }])
 }
 
-
-
 resource "aws_ecs_service" "backend" {
   name            = "backend"
   cluster         = aws_ecs_cluster.backend-cluster.id
@@ -323,4 +358,4 @@ resource "aws_ecs_service" "backend" {
   depends_on = [
     aws_lb_listener.http
   ]
-}
+}*/
