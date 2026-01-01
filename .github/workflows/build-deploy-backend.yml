@@ -3,9 +3,6 @@ name: Build and Deploy Backend
 on:
   push:
     branches: ["main"]
-    paths:
-      - "backend/**"
-      - "infra/**"
 
 permissions:
   id-token: write  # necessary for OIDC
