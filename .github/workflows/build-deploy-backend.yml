@@ -49,10 +49,7 @@ jobs:
           cd backend
           docker build -t $IMAGE_URI .
           docker push $IMAGE_URI
-          echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
-
-      - name: Debug image output
-        run: echo "IMAGE_URI is ${{ steps.set-image.outputs.image_uri }}"    
+          echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPU
 
   terraform-deploy:
     needs: build-and-push
@@ -62,7 +59,7 @@ jobs:
         working-directory: infra
     steps:
       - name: Check var value
-        run: echo "IMAGE_URI is ${{ needs.build-and-push.outputs.image_uri }}      
+        run: echo "IMAGE_URI is ${{ needs.build-and-push.outputs.image_uri }}""      
 
       - name: Checkout repo
         uses: actions/checkout@v4
