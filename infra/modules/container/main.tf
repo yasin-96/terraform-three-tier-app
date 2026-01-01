@@ -146,7 +146,8 @@ data "aws_iam_policy_document" "terraform_inline_policy_doc" {
       "s3:GetBucketAcl",
       "s3:GetBucketPolicy",
       "s3:GetBucketVersioning",
-      "s3:GetBucketCORS"
+      "s3:GetBucketCORS",
+      "s3:GetBucketWebsite"
     ]
     resources = [aws_s3_bucket.tf_state.arn]
   }
@@ -168,7 +169,8 @@ data "aws_iam_policy_document" "terraform_inline_policy_doc" {
       "dynamodb:DeleteItem",
       "dynamodb:DescribeTable",
       "dynamodb:DescribeContinuousBackups",
-      "dynamodb:DescribeTimeToLive"
+      "dynamodb:DescribeTimeToLive",
+      "dynamodb:ListTagsOfResource"
     ]
     resources = [aws_dynamodb_table.tf_lock.arn]
   }
