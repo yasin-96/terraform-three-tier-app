@@ -149,13 +149,6 @@ data "aws_iam_policy_document" "terraform_inline_policy_doc" {
   }
 
   statement {
-    sid = "S3ALBLogsBucket"
-    effect = "Allow"
-    actions = ["s3:*"]
-    resources = ["arn:aws:s3:::my-alb-logs-bucket-three-tier"]
-  }
-
-  statement {
     sid       = "S3ObjectsFull"
     effect    = "Allow"
     actions   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
@@ -199,7 +192,6 @@ resource "aws_s3_bucket_versioning" "tf_state_versioning" {
   }
 }
 
-# Server-side encryption is now a separate resource
 resource "aws_s3_bucket_server_side_encryption_configuration" "tf_state_sse" {
   bucket = aws_s3_bucket.tf_state.id
 
@@ -236,8 +228,8 @@ resource "aws_security_group" "lb" {
   }
 
   egress { # to tasks on container port
-    from_port   = 80
-    to_port     = 80
+    from_port   = 8080
+    to_port     = 8080
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -245,7 +237,7 @@ resource "aws_security_group" "lb" {
 
 resource "aws_lb_target_group" "backend_tg" {
   name        = "backend-tg"
-  port        = 80
+  port        = 8080
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
   target_type = "ip" # REQUIRED for Fargate
@@ -257,17 +249,11 @@ resource "aws_lb" "backend-lb" {
   load_balancer_type = "application"
   subnets            = var.public_subnet_ids
   security_groups = [aws_security_group.lb.id]
-
-  access_logs {
-    bucket  = "my-alb-logs-bucket-three-tier "
-    prefix  = "alb-logs"
-    enabled = true
-  }
 }
 
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.backend-lb.arn
-  port              = 80
+  port              = 8080
   protocol          = "HTTP"
 
   default_action {
@@ -281,8 +267,8 @@ resource "aws_security_group" "tasks" {
   vpc_id = var.vpc_id
 
   ingress {
-    from_port       = 80
-    to_port         = 80
+    from_port       = 8080
+    to_port         = 8080
     protocol        = "tcp"
     security_groups = [aws_security_group.lb.id] # only ALB can reach tasks
   }
@@ -335,8 +321,8 @@ resource "aws_ecs_task_definition" "backend" {
   memory                   = "1024"
 
   # Roles
-  execution_role_arn = aws_iam_role.ecs_execution.arn # Lets ECS agent pull from ECR & write logs
-  task_role_arn      = aws_iam_role.ecs_task.arn      # Lets container access AWS resources if needed
+  execution_role_arn = aws_iam_role.ecs_execution.arn 
+  task_role_arn      = aws_iam_role.ecs_task.arn     
 
   container_definitions = jsonencode([{
     name  = "backend"
@@ -371,89 +357,25 @@ resource "aws_ecs_service" "backend" {
   name             = "backend"
   cluster          = aws_ecs_cluster.backend-cluster.id
   task_definition  = aws_ecs_task_definition.backend.arn
-  desired_count    = 0
+  desired_count    = 2
   launch_type      = "FARGATE"
   platform_version = "LATEST"
 
   # Required for Fargate: awsvpc networking
   network_configuration {
-    subnets          = var.private_subnet_ids # prefer private subnets
+    subnets          = var.private_subnet_ids
     security_groups  = [aws_security_group.tasks.id]
-    assign_public_ip = false # true only if using public subnets
+    assign_public_ip = false 
   }
   
-  # Comment out ALB block to avoid conflict
-  # load_balancer {
-  #   target_group_arn = aws_lb_target_group.backend_tg.arn
-  #   container_name   = "backend"
-  #   container_port   = 8080
-  # }
-
-  depends_on = [
-    aws_lb_listener.http
-  ]
-}
-
-# CloudWatch log group for nginx test
-resource "aws_cloudwatch_log_group" "nginx_test" {
-  name              = "/ecs/nginx-test"
-  retention_in_days = 7
-}
-
-# ECS task definition for nginx
-resource "aws_ecs_task_definition" "nginx_test" {
-  family                   = "nginx-test-task"
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  cpu                      = "256"
-  memory                   = "512"
-
-  execution_role_arn = aws_iam_role.ecs_execution.arn
-  task_role_arn      = aws_iam_role.ecs_task.arn
-
-  container_definitions = jsonencode([{
-    name  = "nginx-test"
-    image = "nginx:alpine"
-
-    portMappings = [{
-      containerPort = 80
-      hostPort      = 80
-      protocol      = "tcp"
-    }]
-
-    logConfiguration = {
-      logDriver = "awslogs"
-      options = {
-        "awslogs-group"         = "/ecs/nginx-test"
-        "awslogs-region"        = var.aws_region
-        "awslogs-stream-prefix" = "ecs"
-      }
-    }
-  }])
-}
-
-# ECS service for nginx test
-resource "aws_ecs_service" "nginx_test" {
-  name             = "nginx-test-service"
-  cluster          = aws_ecs_cluster.backend-cluster.id
-  task_definition  = aws_ecs_task_definition.nginx_test.arn
-  desired_count    = 2
-  launch_type      = "FARGATE"
-  platform_version = "LATEST"
-
-  network_configuration {
-    subnets          = var.private_subnet_ids
-    security_groups  = [aws_security_group.tasks.id] # reuse your existing tasks SG
-    assign_public_ip = false
-  }
-
   load_balancer {
-    target_group_arn = aws_lb_target_group.backend_tg.arn # reuse existing TG
-    container_name   = "nginx-test"
-    container_port   = 80
+    target_group_arn = aws_lb_target_group.backend_tg.arn
+    container_name   = "backend"
+    container_port   = 8080
   }
 
   depends_on = [
     aws_lb_listener.http
   ]
 }
+

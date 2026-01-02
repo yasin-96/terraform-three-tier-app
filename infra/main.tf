@@ -24,7 +24,7 @@ module "networking" {
 module "container" {
   aws_region         = var.region
   source             = "./modules/container"
-  public_subnet_ids  = module.networking.private_subnet_ids
+  public_subnet_ids  = module.networking.public_subnet_ids
   vpc_id             = module.networking.vpc_id
   region             = var.region
   image              = var.image
