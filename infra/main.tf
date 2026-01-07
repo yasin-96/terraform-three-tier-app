@@ -30,8 +30,8 @@ module "container" {
   image              = var.image
   private_subnet_ids = module.networking.private_subnet_ids
 }
-/*
+
 module "frontend" {
   source = "./modules/frontend"
   bucket_name = var.bucket_name
-}*/
+}

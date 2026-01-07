@@ -3,9 +3,7 @@ name: Build and Deploy Backend
 on:
   push:
     branches:
-      - main
-    paths:
-      - 'backend/**'  
+      - main 
 
 permissions:
   id-token: write

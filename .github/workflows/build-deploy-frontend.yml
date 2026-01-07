@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    paths:
+      - '/frontend'    
 
 permissions:
     id-token: write # required for OIDC
@@ -44,5 +46,5 @@ jobs:
 
       - name: Deploy to S3
         run: |
-          aws s3 sync dist/ s3://my-terraform-state-bucket-three-tier/ --delete \
+          aws s3 sync dist/ s3://three-tier-frontend-bucket/ --delete \
             --acl public-read

@@ -37,5 +37,5 @@ variable "image" {
 
 variable "bucket_name" {
   type    = string
-  default = "three-tier-frontend"
+  default = "three-tier-frontend-bucket"
 }
