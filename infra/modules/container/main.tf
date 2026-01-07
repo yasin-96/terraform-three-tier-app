@@ -57,6 +57,107 @@ resource "aws_iam_role_policy" "github_actions_ecr_policy" {
   })
 }
 
+resource "aws_iam_policy" "github_actions_full_access" {
+  name        = "GitHubActionsFullAccess"
+  description = "Policy for GitHub Actions to deploy frontend, backend, and manage Terraform state"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      # Terraform state S3 bucket
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ],
+        Resource = [
+          aws_s3_bucket.tf_state.arn,
+          "${aws_s3_bucket.tf_state.arn}/*"
+        ]
+      },
+
+      # Frontend S3 bucket
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:CreateBucket",
+          "s3:DeleteBucket",
+          "s3:ListBucket",
+          "s3:GetBucketLocation",
+          "s3:PutBucketPolicy",
+          "s3:PutEncryptionConfiguration",
+          "s3:GetBucketPolicy",
+          "s3:PutBucketPublicAccessBlock",
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ],
+        Resource = [
+          "arn:aws:s3:::three-tier-frontend-bucket",
+          "arn:aws:s3:::three-tier-frontend-bucket/*"
+        ]
+      },
+
+      # ECR full access
+      {
+        Effect = "Allow",
+        Action = ["ecr:*"],
+        Resource = ["*"]
+      },
+
+      # ECS full access
+      {
+        Effect = "Allow",
+        Action = ["ecs:*"],
+        Resource = ["*"]
+      },
+
+      # EC2, ALB, CloudWatch full access
+      {
+        Effect = "Allow",
+        Action = [
+          "ec2:*",
+          "elasticloadbalancing:*",
+          "logs:*"
+        ],
+        Resource = ["*"]
+      },
+
+      # IAM OIDC permissions (for GitHub Actions assume-role)
+      {
+        Effect = "Allow",
+        Action = [
+          "iam:GetRole",
+          "iam:ListRolePolicies",
+          "iam:GetRolePolicy",
+          "iam:ListAttachedRolePolicies",
+          "iam:PassRole",
+          "iam:GetOpenIDConnectProvider"
+        ],
+        Resource = ["*"]
+      },
+
+      # DynamoDB lock table
+      {
+        Effect = "Allow",
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:DescribeTable",
+          "dynamodb:ListTagsOfResource"
+        ],
+        Resource = [aws_dynamodb_table.tf_lock.arn]
+      }
+    ]
+  })
+}
+
+
 resource "aws_iam_role" "github_actions_terraform" {
   name = "github-actions-terraform"
 
@@ -77,142 +178,11 @@ resource "aws_iam_role" "github_actions_terraform" {
   })
 }
 
-data "aws_iam_policy_document" "terraform_inline_policy_doc" {
-  statement {
-    sid    = "IAMFull"
-    effect = "Allow"
-    actions = [
-      "iam:GetRole",
-      "iam:ListRolePolicies",
-      "iam:GetRolePolicy",
-      "iam:ListAttachedRolePolicies",
-      "iam:CreateRole",
-      "iam:DeleteRole",
-      "iam:AttachRolePolicy",
-      "iam:DetachRolePolicy",
-      "iam:PassRole",
-      "iam:GetOpenIDConnectProvider",
-      "iam:PutRole"
-    ]
-    resources = ["*"]
-  }
-
-  statement {
-    sid    = "ECRFull"
-    effect = "Allow"
-    actions = [
-      "ecr:DescribeRepositories",
-      "ecr:CreateRepository",
-      "ecr:DeleteRepository",
-      "ecr:ListImages",
-      "ecr:DescribeImages",
-      "ecr:ListTagsForResource"
-    ]
-    resources = ["*"]
-  }
-
-  statement {
-    sid       = "ECSPermissions"
-    effect    = "Allow"
-    actions   = ["ecs:*"]
-    resources = ["*"]
-  }
-
-  statement {
-    sid       = "EC2AndNetworking"
-    effect    = "Allow"
-    actions   = ["ec2:*"]
-    resources = ["*"]
-  }
-
-  statement {
-    sid       = "ALBPermissions"
-    effect    = "Allow"
-    actions   = ["elasticloadbalancing:*"]
-    resources = ["*"]
-  }
-
-  statement {
-    sid       = "CloudWatchLogs"
-    effect    = "Allow"
-    actions   = ["logs:*"]
-    resources = ["*"]
-  }
-
-  statement {
-    sid    = "S3BucketFull"
-    effect = "Allow"
-    actions = [
-      "s3:*"
-    ]
-    resources = [aws_s3_bucket.tf_state.arn]
-  }
-
-  statement {
-    sid       = "S3ObjectsFull"
-    effect    = "Allow"
-    actions   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
-    resources = ["${aws_s3_bucket.tf_state.arn}/*"]
-  }
-
-  statement {
-    sid    = "DynamoDBFull"
-    effect = "Allow"
-    actions = [
-      "dynamodb:GetItem",
-      "dynamodb:PutItem",
-      "dynamodb:UpdateItem",
-      "dynamodb:DeleteItem",
-      "dynamodb:DescribeTable",
-      "dynamodb:DescribeContinuousBackups",
-      "dynamodb:DescribeTimeToLive",
-      "dynamodb:ListTagsOfResource"
-    ]
-    resources = [aws_dynamodb_table.tf_lock.arn]
-  }
-
-  statement {
-    sid    = "S3FrontendFull"
-    effect = "Allow"
-    actions = [
-      "s3:CreateBucket",
-      "s3:DeleteBucket",
-      "s3:ListBucket",
-      "s3:GetBucketLocation",
-      "s3:PutBucketPolicy",
-      "s3:PutBucketPublicAccessBlock",
-      "s3:GetBucketPolicy",
-      "s3:DeleteBucketPolicy",
-      "s3:PutEncryptionConfiguration",
-      "s3:GetEncryptionConfiguration"
-    ]
-    resources = [
-      "arn:aws:s3:::three-tier-frontend-bucket"
-    ]
-  }
-
-  statement {
-    sid    = "S3FrontendObjects"
-    effect = "Allow"
-    actions = [
-      "s3:PutObject",
-      "s3:GetObject",
-      "s3:DeleteObject",
-      "s3:ListBucketMultipartUploads",
-      "s3:AbortMultipartUpload"
-    ]
-    resources = [
-      "arn:aws:s3:::three-tier-frontend-bucket/*"
-    ]
-  }
+resource "aws_iam_role_policy_attachment" "github_actions_attach" {
+  role       = aws_iam_role.github_actions_terraform.name
+  policy_arn = aws_iam_policy.github_actions_full_access.arn
 }
 
-
-resource "aws_iam_role_policy" "terraform_inline_policy" {
-  name   = "github-actions-terraform-inline"
-  role   = aws_iam_role.github_actions_terraform.name
-  policy = data.aws_iam_policy_document.terraform_inline_policy_doc.json
-}
 
 resource "aws_s3_bucket" "tf_state" {
   bucket = "my-terraform-state-bucket-three-tier"
