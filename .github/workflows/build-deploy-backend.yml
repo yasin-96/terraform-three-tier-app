@@ -21,7 +21,7 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     outputs:
-      IMAGE_URI: ${{ steps.set-image.outputs.image_uri }}
+      image_uri: ${{ steps.set-image.outputs.image_uri }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -49,6 +49,7 @@ jobs:
         run: |
           IMAGE_TAG=${GITHUB_SHA}
           IMAGE_URI=${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${IMAGE_TAG}
+          echo "Image URI: $IMAGE_URI"
           echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
 
           cd backend
@@ -68,8 +69,13 @@ jobs:
       - name: Register new ECS task definition
         id: register-task
         run: |
-          IMAGE_URI="${{ needs.build-and-push.outputs.IMAGE_URI }}"
+          IMAGE_URI="${{ needs.build-and-push.outputs.image_uri }}"
           echo "Deploying image: $IMAGE_URI"
+          
+          if [ -z "$IMAGE_URI" ]; then
+            echo "Error: IMAGE_URI is empty"
+            exit 1
+          fi
 
           TASK_DEF_JSON=$(aws ecs describe-task-definition \
             --task-definition ${{ env.ECS_TASK_FAMILY }} \
