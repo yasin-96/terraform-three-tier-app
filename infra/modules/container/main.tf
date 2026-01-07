@@ -170,6 +170,41 @@ data "aws_iam_policy_document" "terraform_inline_policy_doc" {
     ]
     resources = [aws_dynamodb_table.tf_lock.arn]
   }
+
+  statement {
+    sid    = "S3FrontendFull"
+    effect = "Allow"
+    actions = [
+      "s3:CreateBucket",
+      "s3:DeleteBucket",
+      "s3:ListBucket",
+      "s3:GetBucketLocation",
+      "s3:PutBucketPolicy",
+      "s3:PutBucketPublicAccessBlock",
+      "s3:GetBucketPolicy",
+      "s3:DeleteBucketPolicy",
+      "s3:PutEncryptionConfiguration",
+      "s3:GetEncryptionConfiguration"
+    ]
+    resources = [
+      "arn:aws:s3:::three-tier-frontend-bucket"
+    ]
+  }
+
+  statement {
+    sid    = "S3FrontendObjects"
+    effect = "Allow"
+    actions = [
+      "s3:PutObject",
+      "s3:GetObject",
+      "s3:DeleteObject",
+      "s3:ListBucketMultipartUploads",
+      "s3:AbortMultipartUpload"
+    ]
+    resources = [
+      "arn:aws:s3:::three-tier-frontend-bucket/*"
+    ]
+  }
 }
 
 
@@ -248,7 +283,7 @@ resource "aws_lb" "backend-lb" {
   internal           = false
   load_balancer_type = "application"
   subnets            = var.public_subnet_ids
-  security_groups = [aws_security_group.lb.id]
+  security_groups    = [aws_security_group.lb.id]
 }
 
 resource "aws_lb_listener" "http" {
@@ -321,8 +356,8 @@ resource "aws_ecs_task_definition" "backend" {
   memory                   = "1024"
 
   # Roles
-  execution_role_arn = aws_iam_role.ecs_execution.arn 
-  task_role_arn      = aws_iam_role.ecs_task.arn     
+  execution_role_arn = aws_iam_role.ecs_execution.arn
+  task_role_arn      = aws_iam_role.ecs_task.arn
 
   container_definitions = jsonencode([{
     name  = "backend"
@@ -365,9 +400,9 @@ resource "aws_ecs_service" "backend" {
   network_configuration {
     subnets          = var.private_subnet_ids
     security_groups  = [aws_security_group.tasks.id]
-    assign_public_ip = false 
+    assign_public_ip = false
   }
-  
+
   load_balancer {
     target_group_arn = aws_lb_target_group.backend_tg.arn
     container_name   = "backend"
