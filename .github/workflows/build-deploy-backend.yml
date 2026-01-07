@@ -21,7 +21,7 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     outputs:
-      image_uri: ${{ steps.set-image.outputs.image_uri }}
+      image_tag: ${{ steps.set-image.outputs.image_tag }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -50,7 +50,7 @@ jobs:
           IMAGE_TAG=${GITHUB_SHA}
           IMAGE_URI=${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${IMAGE_TAG}
           echo "Image URI: $IMAGE_URI"
-          echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
 
           cd backend
           docker build -t $IMAGE_URI .
@@ -69,7 +69,8 @@ jobs:
       - name: Register new ECS task definition
         id: register-task
         run: |
-          IMAGE_URI="${{ needs.build-and-push.outputs.image_uri }}"
+          IMAGE_TAG="${{ needs.build-and-push.outputs.image_tag }}"
+          IMAGE_URI=${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${IMAGE_TAG}
           echo "Deploying image: $IMAGE_URI"
           
           if [ -z "$IMAGE_URI" ]; then
