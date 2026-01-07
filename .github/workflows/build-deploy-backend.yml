@@ -4,8 +4,9 @@ on:
   push:
     branches:
       - main
+    # Uncomment this if you want to restrict to backend folder
     # paths:
-    # - 'backend/**'  # optional if you want to limit triggers
+    #   - 'backend/**'
 
 permissions:
   id-token: write
@@ -22,8 +23,6 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    outputs:
-      IMAGE_URI: ${{ steps.set-image.outputs.IMAGE_URI }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -47,11 +46,13 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build and push Docker image
-        id: set-image
         run: |
           IMAGE_TAG=${GITHUB_SHA}
           IMAGE_URI=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}
-          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_OUTPUT
+
+          # Make IMAGE_URI available to subsequent jobs
+          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
+
           cd backend
           docker build -t $IMAGE_URI .
           docker push $IMAGE_URI
@@ -69,15 +70,15 @@ jobs:
       - name: Register new ECS task definition
         id: register-task
         run: |
-          IMAGE_URI="${{ needs.build-and-push.outputs.IMAGE_URI }}"
-          echo "Using image: $IMAGE_URI"
+          # IMAGE_URI is available from $GITHUB_ENV
+          echo "Deploying image: $IMAGE_URI"
 
-          # Get current task definition
+          # Get current task definition JSON
           TASK_DEF_JSON=$(aws ecs describe-task-definition \
             --task-definition ${{ env.ECS_TASK_FAMILY }} \
             --query 'taskDefinition' \
             --output json)
-
+          
           # Remove unnecessary fields
           echo $TASK_DEF_JSON | jq 'del(.status, .revision, .taskDefinitionArn, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' > taskdef.json
 
@@ -89,7 +90,7 @@ jobs:
             --cli-input-json file://taskdef-updated.json \
             --query 'taskDefinition.taskDefinitionArn' \
             --output text)
-
+          
           echo "new_task_def=$NEW_TASK_DEF_ARN" >> $GITHUB_OUTPUT
 
       - name: Update ECS service to new task definition
