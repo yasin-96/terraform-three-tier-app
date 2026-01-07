@@ -5,8 +5,9 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @CrossOrigin
+@RequestMapping("/api")
 public class HelloController {
-    @PostMapping("hello")
+    @PostMapping("/hello")
     public void hello(@RequestBody HelloModel helloModel ) {
         System.out.println(helloModel.getMessage());
     }
