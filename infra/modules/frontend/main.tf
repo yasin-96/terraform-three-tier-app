@@ -29,3 +29,12 @@ resource "aws_s3_bucket_policy" "react_app_policy" {
     ]
   })
 }
+
+resource "aws_s3_bucket_public_access_block" "frontend" {
+  bucket = aws_s3_bucket.site
+
+  block_public_acls       = true
+  ignore_public_acls      = true
+  block_public_policy     = true
+  restrict_public_buckets = true
+}
