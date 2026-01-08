@@ -20,7 +20,7 @@ module "networking" {
   private_subnets = var.private_subnets
   vpc_cidr        = var.vpc_cidr
 }
-
+/*
 module "container" {
   aws_region         = var.region
   source             = "./modules/container"
@@ -29,7 +29,7 @@ module "container" {
   region             = var.region
   image              = var.image
   private_subnet_ids = module.networking.private_subnet_ids
-}
+}*/
 
 module "frontend" {
   source      = "./modules/frontend"
