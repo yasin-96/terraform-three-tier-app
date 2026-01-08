@@ -32,7 +32,7 @@ variable "az_count" {
 }
 
 variable "image" {
-  type = string
+  type    = string
   default = ""
 }
 
