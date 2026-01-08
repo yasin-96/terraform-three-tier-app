@@ -148,6 +148,17 @@ resource "aws_lb_target_group" "backend_tg" {
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
   target_type = "ip"
+
+  health_check {
+    enabled             = true
+    healthy_threshold   = 2      # Number of consecutive successful checks before healthy
+    unhealthy_threshold = 3      # Number of consecutive failed checks before unhealthy
+    timeout             = 5      # Seconds to wait for a response
+    interval            = 30     # Seconds between health checks
+    path                = "/api"  # Your health check endpoint
+    protocol            = "HTTP"
+    matcher             = "200"  # Expected HTTP status code
+  }
 }
 
 resource "aws_lb" "backend-lb" {
