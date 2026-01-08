@@ -31,7 +31,7 @@ resource "aws_s3_bucket_policy" "react_app_policy" {
 }
 
 resource "aws_s3_bucket_public_access_block" "frontend" {
-  bucket = aws_s3_bucket.site
+  bucket = aws_s3_bucket.site.id
 
   block_public_acls       = true
   ignore_public_acls      = true
