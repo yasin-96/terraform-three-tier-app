@@ -33,7 +33,7 @@ variable "az_count" {
 
 variable "image" {
   type    = string
-  default = ""
+  default = "373486034214.dkr.ecr.eu-west-1.amazonaws.com/backend:latest"
 }
 
 variable "bucket_name" {
