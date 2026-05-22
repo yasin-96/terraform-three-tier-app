@@ -1,3 +1,17 @@
+provider "aws" {
+  region = var.region
+}
+
+terraform {
+  backend "s3" {
+    bucket         = "my-terraform-state-bucket-three-tier"
+    key            = "bootstrap/terraform.tfstate"
+    region         = "eu-west-1"
+    dynamodb_table = "terraform-lock-table"
+    encrypt        = true
+  }
+}
+
 resource "aws_s3_bucket" "tf_state" {
   bucket = "my-terraform-state-bucket-three-tier"
 
@@ -20,7 +34,6 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "tf_state_sse" {
     }
   }
 }
-
 
 resource "aws_dynamodb_table" "tf_lock" {
   name         = "terraform-lock-table"
