@@ -41,7 +41,7 @@ resource "aws_iam_openid_connect_provider" "github" {
   ]
 }
 
-/*
+
 resource "aws_iam_role" "github_actions_ecr" {
   name = "github-actions-ecr"
 
@@ -83,4 +83,24 @@ resource "aws_iam_role_policy" "github_actions_ecr_policy" {
       }
     ]
   })
-}*/
+}
+
+resource "aws_iam_role" "github_actions_terraform" {
+  name = "github-actions-terraform"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Federated = aws_iam_openid_connect_provider.github.arn
+      }
+      Action = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringLike = {
+          "token.actions.githubusercontent.com:sub" = "repo:yasin-96/terraform-three-tier-app:ref:refs/heads/main"
+        }
+      }
+    }]
+  })
+}
