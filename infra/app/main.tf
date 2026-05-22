@@ -2,7 +2,6 @@ provider "aws" {
   region = var.region
 }
 
-
 terraform {
   backend "s3" {
     bucket         = "my-terraform-state-bucket-three-tier"
@@ -27,7 +26,7 @@ module "container" {
   public_subnet_ids  = module.networking.public_subnet_ids
   vpc_id             = module.networking.vpc_id
   region             = var.region
-  image              = var.image
+  backend_image      = var.image
   private_subnet_ids = module.networking.private_subnet_ids
 }
 
