@@ -81,7 +81,9 @@ Splitting application builds from the Terraform lifecycle keeps infrastructure c
 reviewable in isolation and avoids rebuilding images on every infrastructure change —
 see [Design decisions](#design-decisions).
 
-> Update the workflow filenames here to match the actual files in `.github/workflows/`.
+Backend: build-deploy-backend.yml
+Frontend: build-deploy-frontend.yml
+Infra: terraform-infra.yml
 
 ---
 
