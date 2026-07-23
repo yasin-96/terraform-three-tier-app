@@ -98,10 +98,10 @@ Terraform project beyond a single-developer experiment.
 # infra/backend.tf  (example — adjust to your actual values)
 terraform {
   backend "s3" {
-    bucket         = "[your-state-bucket]"
+    bucket         = "my-terraform-state-bucket"
     key            = "three-tier-app/terraform.tfstate"
-    region         = "[your-region]"
-    dynamodb_table = "[your-lock-table]"
+    region         = "eu-central-1"
+    dynamodb_table = "terraform-state-lock"
     encrypt        = true
   }
 }
@@ -188,21 +188,7 @@ Application code changes far more often than infrastructure. Keeping image build
 separate from the Terraform lifecycle means an infrastructure review isn't cluttered
 with application diffs, and a code change doesn't trigger a `terraform plan`.
 
----
-
-## Not included
-
-Deliberately out of scope for this reference project:
-
-- TLS/ACM certificate automation and a custom domain via Route 53
-- Autoscaling policies for the ECS service
-- Multiple environments (dev/staging/prod) via Terraform workspaces
-- Monitoring and observability (metrics, dashboards, alerting)
-- Blue-green or canary deployment strategies
-
-> Adjust this list if any of these are actually present in your setup.
-
----
+--
 
 ## Notes
 
