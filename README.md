@@ -68,22 +68,18 @@ themselves. The database and application tiers have no direct internet exposure.
 The project uses **three GitHub Actions workflows**, separating application delivery
 from infrastructure changes:
 
-**1. Backend image build & push** — builds the backend container image and pushes it to
+**1. Backend image build & push**(.github/workflows/build-deploy-backend.yml) — builds the backend container image and pushes it to
 Amazon ECR.
 
-**2. Frontend image build & push** — builds the frontend image and pushes it to Amazon
+**2. Frontend image build & push**(.github/workflows/build-deploy-frontend.yml) — builds the frontend image and pushes it to Amazon
 ECR.
 
-**3. Terraform lifecycle** — runs `terraform init`, `plan`, and `apply` for the
+**3. Terraform lifecycle**(.github/workflows/terraform-infra.yml) — runs `terraform init`, `plan`, and `apply` for the
 infrastructure in `infra/`.
 
 Splitting application builds from the Terraform lifecycle keeps infrastructure changes
 reviewable in isolation and avoids rebuilding images on every infrastructure change —
-see [Design decisions](#design-decisions).
-
-Backend: build-deploy-backend.yml
-Frontend: build-deploy-frontend.yml
-Infra: terraform-infra.yml
+see [Design decisions](#design-decisions)
 
 ---
 
